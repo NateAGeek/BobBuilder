@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Font, FontLoader, TextGeometry } from 'three/examples/jsm/Addons.js';
+import { Font, FontLoader, TextGeometry, OBJLoader } from 'three/examples/jsm/Addons.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -28,6 +28,7 @@ const loader = new FontLoader();
 
 let font: Font | null = null;
 let bob: THREE.Mesh<TextGeometry, THREE.MeshStandardMaterial, THREE.Object3DEventMap> | null = null;
+let object: any = null;
 
 loader.load(
     // resource URL
@@ -50,17 +51,44 @@ loader.load(
     }
 )
 
+// instantiate a loader
+const objLoader = new OBJLoader();
+// load a resource
+objLoader.load(
+	// resource URL
+	'models/obj/walt/WaltHead.obj',
+	// called when resource is loaded
+	function ( obj ) {
+        object = obj;
+        object.scale.multiplyScalar( 0.025 );
+		object.position.y = 1;
+        object.traverse( function ( child ) {
+            if ( child instanceof THREE.Mesh ) {
+                child.material = new THREE.MeshStandardMaterial( { color: 0x00FF00, wireframe: true } );
+            }
+        } );
+        
+		scene.add(object );
+	},
+);
+
+const clock = new THREE.Clock();
+
 function animate() {
 
-    if (bob !== null) {
-        bob.rotation.y += 0.01
-    }
     
     const time = Date.now() * 0.0005;
-
+    const delta = clock.getDelta();
+    if ( object ) object.rotation.y += 0.5 * delta;
+    
     pointLight.position.x = Math.sin( time * 0.5 ) * 2;
 	pointLight.position.z = Math.cos( time * 0.5 ) * 2;
     
+    if (bob !== null) {
+        bob.rotation.y += 0.01
+        camera.position.z = Math.cos( time * 0.5 ) * 2;
+        camera.lookAt(bob.position)
+    }
 
 	renderer.render( scene, camera );
 }
